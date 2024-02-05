@@ -100,7 +100,7 @@ const searchUser = async (text) => {
     if (result) {
       setItems(result.results);
     } else {
-      setItems([]); // If no results, clear the items
+      setItems([]); 
     }
   } catch (error) {
     console.error('Error searching user:', error);
@@ -165,7 +165,6 @@ const searchUser = async (text) => {
       );
     }
   
-    // Add previous and next buttons
     buttons.unshift(
       <TouchableOpacity
         key="prev"
@@ -294,9 +293,6 @@ const GenderDropdown = ({ isVisible, onClose, onSelectGender }) => (
           </TouchableOpacity>
         </View>
 
-
-
-
           <View className="bg-emerald-600 w-11/12 self-center">
         <Text className=" text-lg text-center text-white font-extrabold uppercase p-1"> Filter </Text>
         </View>
@@ -337,8 +333,6 @@ const GenderDropdown = ({ isVisible, onClose, onSelectGender }) => (
          <TouchableOpacity className=" " onPress={() => {setSortByABC(!sortByABC); fetchData(currentPage)}}> 
          <Icon name="abc" size={35} style={StyleSheet.create({ color: sortByABC ? "#1C93CD" : "#BCC02C" })} />
          </TouchableOpacity>
-
-        
 
         </View>
 
