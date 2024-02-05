@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, } from 'react';
 import { SafeAreaView, 
   FlatList,
    Text, 
@@ -11,8 +11,8 @@ import { SafeAreaView,
    StyleSheet,
    Modal } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import Navbar from './navbar';
+
 
 
 export default function Home() {
@@ -22,48 +22,90 @@ export default function Home() {
 
   //CURRENT PAGE
   const [items, setItems] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1); // For Current page
+  const [currentPage, setCurrentPage] = useState(1);
   const [allPage, setAllPage] = useState(42);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedChar, setSelectedChar] = useState(null);
 
-  // NAVIGATION FUNCTION
-  const navigation = useNavigation();
-
-  // MODAL FUNCTION
+  // MODAL LOGIC
   const [modalVisible, setModalVisible] = useState(false);
   const numColumns = 5;
 
-  // FILTER FUNCTION
-  
-  
+  // FILTER LOGIC
+  const [sortByABC, setSortByABC] = useState(false);
+  const [sortOrder, setSortOrder] = useState("asc");
 
+  // STATUS LOGIC
+  const [isStatusDropdownVisible, setStatusDropdownVisible] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState(null);
+  const openStatusDropdown = () => setStatusDropdownVisible(true);
+  const closeStatusDropdown = () => setStatusDropdownVisible(false);
 
-  const searchUser = async (text) => {
-    try {
-      const url = `https://rickandmortyapi.com/api/character?name=${text}`;
-      let result = await fetch(url);
-      result = await result.json();
-      
-      if (result) {
-        setItems(result.results);
-      } else {
-        setItems([]); // If no results, clear the items
-      }
-    } catch (error) {
-      console.error('Error searching user:', error);
+  // SPECIES LOGIC
+  const [isSpeciesDropdownVisible, setSpeciesDropdownVisible] = useState(false);
+  const [selectedSpecies, setSelectedSpecies] = useState(null);
+  const openSpeciesDropdown = () => setSpeciesDropdownVisible(true);
+  const closeSpeciesDropdown = () => setSpeciesDropdownVisible(false);
+
+  // GENDER LOGIC
+  const [isGenderDropdownVisible, setGenderDropdownVisible] = useState(false);
+  const [selectedGender, setSelectedGender] = useState(null);
+  const openGenderDropdown = () => setGenderDropdownVisible(true);
+  const closeGenderDropdown = () => setGenderDropdownVisible(false);
+
+const fetchData = async (page, status, species, gender) => {
+  try {
+    let url = `https://rickandmortyapi.com/api/character?page=${page}`;
+
+    if (status) {
+      url += `&status=${status}`;
     }
-  };
 
-  const fetchData = async (page) => {
-    try {
-      const response = await fetch(`https://rickandmortyapi.com/api/character?page=${page}`);
-      const data = await response.json();
-      setItems(data.results);
-    } catch (error) {
-      console.error('Error fetching data:', error);
+    if (species) {
+      url += `&species=${species}`;
     }
-  };
+
+    if (gender) {
+      url += `&gender=${gender}`;
+    }
+
+    const response = await fetch(url);
+    let data = await response.json();
+
+    if (sortByABC) {
+      data.results.sort((a, b) => {
+        const nameA = a.name.toUpperCase();
+        const nameB = b.name.toUpperCase();
+
+        if (sortOrder === "asc") {
+          return nameA.localeCompare(nameB);
+        } else {
+          return nameB.localeCompare(nameA);
+        }
+      });
+    }
+
+    setItems(data.results);
+  } catch (error) {
+    console.error("Error fetching data:", error);
+  }
+};
+
+const searchUser = async (text) => {
+  try {
+    const url = `https://rickandmortyapi.com/api/character?name=${text}`;
+    let result = await fetch(url);
+    result = await result.json();
+    
+    if (result) {
+      setItems(result.results);
+    } else {
+      setItems([]); // If no results, clear the items
+    }
+  } catch (error) {
+    console.error('Error searching user:', error);
+  }
+};
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -77,32 +119,31 @@ export default function Home() {
     </View>
   );
 
-
+  const resetFilter = () => {
+    setText("");
+    fetchData(1);
+    setSelectedStatus(null); 
+    setSelectedSpecies(null); 
+    setSelectedGender(null);
+    setSortByABC(false); 
+  };
+  
   const handleNextPage = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
-  
 
   useEffect(() => {
     fetchData(currentPage);
-  }, [currentPage]);
+  }, [sortByABC, currentPage]);
 
   const toggleModal = (item) => {
     setSelectedChar(item);
     setModalVisible(!modalVisible);
   };
   
-
-
-
-    const goBack = () => {
-    setModalVisible(false);
-    navigation.goBack(); // Navigating back using the navigation object
-  };
-
   const renderPageButtons = () => {
     const buttons = [];
-    const buttonsPerRow = 5;
+    const buttonsPerRow = 4;
   
     const startButton = Math.max(1, (Math.ceil(currentPage / buttonsPerRow) - 1) * buttonsPerRow + 1);
     const endButton = Math.min(allPage, startButton + buttonsPerRow);
@@ -112,7 +153,7 @@ export default function Home() {
         <TouchableOpacity
           key={i}
           style={{
-            backgroundColor: currentPage === i ? '#8C38CB' : '#0D8399',
+            backgroundColor: currentPage === i ? '#CBC00D' : '#0D8399',
             padding: 10,
             margin: 5,
             borderRadius: 5,
@@ -173,10 +214,68 @@ export default function Home() {
     </TouchableOpacity>
   );
 
-  
-  
-  
+const handleSelectStatus = (status) => {
+  setSelectedStatus(status);
+  fetchData(currentPage, status);
+  closeStatusDropdown();
+};
 
+const handleSelectSpecies = (species) => {
+  setSelectedSpecies(species);
+  fetchData(currentPage, null, species);
+  closeSpeciesDropdown();
+};
+
+const handleSelectGender = (gender) => {
+  setSelectedGender(gender);
+  fetchData(currentPage, null, null,  gender);
+  closeGenderDropdown();
+};
+ 
+// STATUS DROPDOWN MODAL COMPONENT
+const StatusDropdown = ({ isVisible, onClose, onSelectStatus }) => (
+  <Modal visible={isVisible} transparent={true} onRequestClose={onClose}>
+    <View className="bg-slate-50 p-5 rounded-lg absolute top-16 right-2 ">
+      <TouchableOpacity onPress={() => onSelectStatus('Alive')}>
+        <Text className="text-lg py-3">Alive</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => onSelectStatus('Dead')}>
+        <Text className="text-lg py-3">Dead</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => onSelectStatus('unknown')}>
+        <Text className="text-lg py-3">Unknown</Text>
+      </TouchableOpacity>
+    </View>
+  </Modal>
+);
+
+// SPECIES DROPDOWN MODAL COMPONENT
+const SpeciesDropdown = ({ isVisible, onClose, onSelectSpecies }) => (
+  <Modal visible={isVisible} transparent={true} onRequestClose={onClose}>
+    <View className="bg-slate-50 p-5 rounded-lg absolute top-16 right-2 ">
+      <TouchableOpacity onPress={() => onSelectSpecies('Human')}>
+        <Text className="text-lg py-3">Human</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => onSelectSpecies('Alien')}>
+        <Text className="text-lg py-3">Alien</Text>
+      </TouchableOpacity>
+    </View>
+  </Modal>
+);
+
+// GENDER DROPDOWN MODAL COMPONENT
+const GenderDropdown = ({ isVisible, onClose, onSelectGender }) => (
+  <Modal visible={isVisible} transparent={true} onRequestClose={onClose}>
+    <View className="bg-slate-50 p-5 rounded-lg absolute top-16 right-2 ">
+      <TouchableOpacity onPress={() => onSelectGender('Male')}>
+        <Text className="text-lg py-3">Male</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => onSelectGender('Female')}>
+        <Text className="text-lg py-3">Female</Text>
+      </TouchableOpacity>
+    </View>
+  </Modal>
+);
 
   return (
     <SafeAreaView className="flex-1 bg-slate-200">
@@ -190,7 +289,7 @@ export default function Home() {
           onChangeText={
             (value) => {setText(value); searchUser(value);
             }} />
-          <TouchableOpacity className="justify-center items-center mr-2" onPress={() => setText("")}>
+          <TouchableOpacity className="justify-center items-center mr-2" onPress={(resetFilter)}>
             <Icon name="cancel" size={28} />
           </TouchableOpacity>
         </View>
@@ -204,24 +303,39 @@ export default function Home() {
 
         <View className="flex-row my-3 justify-evenly">
 
-        <TouchableOpacity className="color-r "> 
-        <Icon name="cancel" size={32} style={StyleSheet.create({ color:'#8C38CB' })} />
+        <TouchableOpacity onPress={resetFilter}> 
+        <Icon name="cancel" size={32} style={StyleSheet.create({ color:'#BCC02C' })} />
         </TouchableOpacity>
 
-        <TouchableOpacity className=" "> 
-        <Icon name="wc" size={32} style={StyleSheet.create({ color:'#8C38CB' })} />
-         </TouchableOpacity>
+        <View className=" ">
+        <Icon name="wc" size={32} style={StyleSheet.create({ color: '#BCC02C' })} onPress={openGenderDropdown} />
+        <GenderDropdown
+        isVisible={isGenderDropdownVisible}
+        onClose={closeGenderDropdown}
+        onSelectGender={handleSelectGender}
+        />
+        </View>
 
-         <TouchableOpacity className=" "> 
-         <Icon name="groups" size={32} style={StyleSheet.create({ color:'#8C38CB' })} />
-         </TouchableOpacity>
+        <View className=" ">
+        <Icon name="groups" size={32} style={StyleSheet.create({ color: '#BCC02C' })} onPress={openSpeciesDropdown} />
+        <SpeciesDropdown
+        isVisible={isSpeciesDropdownVisible}
+        onClose={closeSpeciesDropdown}
+        onSelectSpecies={handleSelectSpecies}
+        />
+        </View>
 
-         <TouchableOpacity className=" "> 
-         <Icon name="mood" size={32} style={StyleSheet.create({ color:'#8C38CB' })}/>
-         </TouchableOpacity>
+        <View className=" ">
+        <Icon name="mood" size={32} style={StyleSheet.create({ color: '#BCC02C' })} onPress={openStatusDropdown} />
+        <StatusDropdown
+        isVisible={isStatusDropdownVisible}
+        onClose={closeStatusDropdown}
+        onSelectStatus={handleSelectStatus}
+        />
+        </View>
 
-         <TouchableOpacity className=" "> 
-         <Icon name="abc" size={32} style={StyleSheet.create({ color:'#8C38CB' })} />
+         <TouchableOpacity className=" " onPress={() => {setSortByABC(!sortByABC); fetchData(currentPage)}}> 
+         <Icon name="abc" size={35} style={StyleSheet.create({ color: sortByABC ? "#1C93CD" : "#BCC02C" })} />
          </TouchableOpacity>
 
         
@@ -247,11 +361,11 @@ export default function Home() {
           <View className="flex-1 justify-around bg-purple-900 m-5">
             <View className="flex-row justify-between mx-2">
                   <Icon name="chevron-left" size={32} style={StyleSheet.create({ color:'#DFD2CB', })}
-          onPress={() => goBack()} />
+          onPress={() => setModalVisible(false)} />
           <Text className=" text-base bg-green-500 w-24 self-center text-center  rounded-full text-slate-200 font-black uppercase">{selectedChar.status} </Text>
             </View>
           <View className="items-center mb-8">
-                      <Text className="text-4xl font-extrabold text-slate-100 uppercase">{selectedChar.name} </Text>
+                      <Text className="text-4xl text-center font-extrabold text-slate-100 uppercase">{selectedChar.name} </Text>
 
             <Image className="w-64 h-64 my-5 rounded-full " source={{uri:selectedChar.image}} />
             
